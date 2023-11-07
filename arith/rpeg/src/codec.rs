@@ -1,55 +1,95 @@
-use csc411_image;
-//use csc411_rpegio;
-use csc411_image::{Read, RgbImage};
+use csc411_image::{Read, RgbImage, Write};
+use bitpack::bitpack::{newu, news};
+use csc411_rpegio::{output_rpeg_data, read_in_rpeg_data};
+use crate::format::{trim, divide_denom, load_words};
+use crate::value_conversion::{rgbto_ypbpr, dct, dct_function, dct_to_rgb};
 
-use crate::format::{trim_image, pixels_from_int_to_float};
-
-use crate::value_conversion::{rgb_float_to_ypbpr};
-
-struct RgbFloatValues
-{
-    red: f32,
-    green: f32,
-    blue: f32,
+// created structs to easier manipulate data
+#[derive(Clone, Debug)]
+pub struct Ypbpr {
+    pub y: f32,
+    pub pb: f32,
+    pub pr: f32,
 }
 
-struct YpbprValues
-{
-    y: f32,
-    P_b: f32,
-    P_r: f32,
+#[derive(Clone, Debug)]
+pub struct RgbFloat {
+    pub red: f32,
+    pub green: f32,
+    pub blue: f32,
 }
 
-pub fn compress(input_name: &str)
-{
-/*
-    Handling reading image from command line in terminal from main.rs
-    and having place holders for its current width and height. When
-    checking the height and with of the initial image, we may have to 
-    trim the pixels of either row and column of the image. This results
-    in data lost at the beginning step of the program.
-*/
-    let init_img = RgbImage::read(Some(input_name)).unwrap();
+#[derive(Clone, Debug)]
+pub struct DCTValues{
+    pub yval: f32,
+    pub avg_pb: f32,
+    pub avg_pr: f32,
+}
 
-    let mut current_width = init_img.width;
-    let mut current_height = init_img.height;
+// function for compression
+pub fn compress(filename: &str){
+    let read_in = RgbImage::read(Some(filename)).unwrap();
 
-    if init_img.height % 2 != 0
-    {
-        current_height -= 1;
+    let mut new_width = read_in.width;
+    let mut new_height = read_in.height;
+
+    //trimming
+    if read_in.width % 2 != 0{
+        new_width -= 1;
     }
-    else if init_img.width % 2 != 0
-    {
-        current_width -= 1;
+    if read_in.height % 2 != 0{
+        new_height -=1;
     }
+    
+    let new_image = trim(&read_in, new_width, new_height);
+    
+    //new vector to store decimal 
+    let new_image_deci = divide_denom(&new_image, &read_in, new_width, new_height);
+    
+    //vector for storing Ypbpr values from the original RGB values
+    let pb_vector = rgbto_ypbpr(&new_image, &new_image_deci, new_width, new_height);
 
-    //STEP 1: Getting Rgb Image
-    let current_img = trim_image(&init_img, current_width, current_height);
+    //converting from rgb to component video 
+    let mut word_vec = Vec::new();
+    for row in (0..new_height).step_by(2){
+        for col in (0..new_width).step_by(2){
+            let (a,b,c,d,avg_pb,avg_pr) = dct(&pb_vector, new_width, new_height, row, col);
+            let mut word = 0_u64;
+            word = newu(word, 9, 23, a as u64).unwrap();
+            word = news(word, 5, 18, b as i64).unwrap();
+            word = news(word, 5, 13, c as i64).unwrap();
+            word = news(word, 5, 8, d as i64).unwrap();
+            word = newu(word, 4, 4, avg_pb as u64).unwrap();
+            word = newu(word, 4, 0, avg_pr as u64).unwrap();
+            word_vec.push((word as u32).to_be_bytes());
+        }
+    }
+    output_rpeg_data(&word_vec, new_width, new_height);
+}
 
-    //Step 2: Rgb -> Rgb Float Pixel Values
-    let rgb_float_img = pixels_from_int_to_float(&current_img, &init_img, current_width, current_height);
+// Decompress----------------------------------------------------------------------------------------
+pub fn decompress(filename: &str) {
+    let (_raw_bytes, _width, _height) = read_in_rpeg_data(Some(filename)).unwrap();
+    
+    // reads in compressed image data
+    let unpack_word_list = load_words(_raw_bytes);
 
-    //Step 3: Rgb Float Pixel Values -> Y, P_b, and P_r
-    let Y_Pb_Pr_vec = rgb_float_to_ypbpr(&current_img, &rgb_float_img, current_width, current_height);
+    // vector for keeping track of values when converted through DCT
+    let mut dct_val_list: Vec<DCTValues> = vec![DCTValues{yval: 0.0, avg_pb: 0.0, avg_pr: 0.0}; _height as usize* _width as usize];
 
+    //converts a,b,c,d values to ypbpr and stores them
+    dct_val_list = dct_function(dct_val_list, _height, _width, unpack_word_list);
+    
+    //converts ypbpr to rgb 
+    let rgb_final = dct_to_rgb(dct_val_list);
+
+    //writing final RGB image out
+    let final_image = RgbImage{
+        width: _width as u32,
+        height: _height as u32,
+        denominator: 255,
+        pixels: rgb_final,
+    };
+                
+    final_image.write(None).unwrap();
 }
