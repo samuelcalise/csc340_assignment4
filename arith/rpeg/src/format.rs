@@ -1,5 +1,6 @@
 use csc411_image::{RgbImage, Rgb};
 
+#[derive(Clone)]
 struct rgb_float_values
 {
     red: f32,
@@ -22,9 +23,9 @@ pub fn trim_image(image: &RgbImage, width: u32, height: u32) -> Vec<csc411_image
     this_image
 }
 
-pub fn pixels_from_int_to_float(this_image: &Vec<csc411_image::Rgb>, init_img: &RgbImage, width: u32, height: u32)
+pub fn pixels_from_int_to_float(this_image: &Vec<csc411_image::Rgb>, init_img: &RgbImage, width: u32, height: u32) -> Vec<rgb_float_values>
 {
-    let float_img: Vec<rgb_float_values> = vec![rgb_float_values{red: 0.0, green: 0.0, blue: 0.0}; width * height].clone();
+    let float_img: Vec<rgb_float_values> = vec![rgb_float_values{red: 0.0, green: 0.0, blue: 0.0}; (width * height) as usize].clone();
 
     for pixel_element in 0..this_image.len()
     {

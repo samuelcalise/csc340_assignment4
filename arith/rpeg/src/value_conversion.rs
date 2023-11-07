@@ -1,12 +1,12 @@
 
-
+#[derive(Clone)]
 struct ypbpr_values
 {
     y: f32,
     P_b: f32,
     P_r: f32,
 }
-
+#[derive(Clone)]
 struct rgb_float_values
 {
     red: f32,

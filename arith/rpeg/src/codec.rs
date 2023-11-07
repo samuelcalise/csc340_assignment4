@@ -2,12 +2,9 @@ use csc411_image;
 //use csc411_rpegio;
 use csc411_image::{Read, RgbImage};
 
-pub mod format;
-use format::{trim_image, pixels_from_int_to_float};
+use crate::format::{trim_image, pixels_from_int_to_float};
 
-pub mod value_conversions;
-use value_conversions::{rgb_float_to_ypbpr};
-
+use crate::value_conversion::{rgb_float_to_ypbpr};
 
 struct RgbFloatValues
 {
