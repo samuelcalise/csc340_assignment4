@@ -1,5 +1,7 @@
 use std::env;
 pub use array2::Array2;
+mod codec;
+use codec::{compress};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -7,11 +9,10 @@ fn main() {
     assert!(argnum == 2 || argnum == 3);
     let filename = args.iter().nth(2).unwrap();
     match args[1].as_str() {
-        //"-c" => compress(filename),
+        "-c" => compress(filename),
         //"-d" => decompress(Some(filename)),
         _ => {
             eprintln!("Usage: rpeg -d [filename]\nrpeg -c [filename]")
         }
     }
 }
-
