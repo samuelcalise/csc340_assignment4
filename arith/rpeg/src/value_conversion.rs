@@ -13,6 +13,29 @@ pub struct Ypbpr {
     pub pr: f32,
 }
 
+/// Converts rgb into a ypbpr values with given formula. Returns a vector including all the Ypbpr values.
+/// 
+/// # Arguments:
+/// * `new_image`: &Vec<csc411_image::Rgb> holds the value of all the rgb pixels from the given file
+/// * `new_image_deci`: Vec<RgbFloat> holds the decimal versions of the rgb pixels from new_image
+/// * `new_width`: value to hold the width value
+/// * `new_height`: value to hold the height value
+pub fn rgb_to_ypbpr(new_image: &Vec<csc411_image::Rgb>, new_image_deci: &Vec<RgbFloat>, new_width: u32, new_height: u32) -> Vec<Ypbpr>{
+    let mut pb_vector: Vec<Ypbpr> = vec![Ypbpr{y: 0.0, pb:0.0, pr: 0.0}; new_width as usize * new_height as usize].clone();
+    
+    for pixel in 0..new_image.len(){
+        let y = 0.299 * new_image_deci[pixel].red + 0.587 * new_image_deci[pixel].green + 0.114 * new_image_deci[pixel].blue;
+        let pb = -0.168736 * new_image_deci[pixel].red + (-0.331264) * new_image_deci[pixel].green + 0.5 * new_image_deci[pixel].blue;
+        let pr = 0.5 * new_image_deci[pixel].red + (-0.418688) * new_image_deci[pixel].green + (-0.081312) * new_image_deci[pixel].blue;
+        pb_vector[pixel].y = y;
+        pb_vector[pixel].pb = pb;
+        pb_vector[pixel].pr = pr;
+
+    }
+
+    return pb_vector;
+}
+
 /// Takes the index of chroma for the pb and pr values. Also converts b,c,d to 5 bits.
 /// 
 /// # Arguments:
@@ -21,7 +44,7 @@ pub struct Ypbpr {
 /// * `_new_height`: the height 
 /// * `row`: the row
 /// * `col`: the col
-pub fn dct(pb_vector: &Vec<Ypbpr>, new_width: u32, _new_height: u32, row: u32, col: u32) -> (f32, f32, f32, f32, usize, usize) {
+pub fn get_dct_values(pb_vector: &Vec<Ypbpr>, new_width: u32, _new_height: u32, row: u32, col: u32) -> (usize, usize, f32, f32, f32, f32) {
     let top_left = pb_vector[(new_width * row + col) as usize].clone();
     let top_right = pb_vector[(new_width * row + (col + 1)) as usize].clone();
     let bot_left = pb_vector[(new_width * (row+1) + col) as usize].clone();
@@ -44,32 +67,8 @@ pub fn dct(pb_vector: &Vec<Ypbpr>, new_width: u32, _new_height: u32, row: u32, c
     d = (d.clamp(-0.3,0.3) * 50.0).round();
 
 
-    return (a,b,c,d,avg_pb, avg_pr);
+    return (avg_pb, avg_pr, a, b, c, d);
 }
-
-/// Converts rgb into a ypbpr values with given formula. Returns a vector including all the Ypbpr values.
-/// 
-/// # Arguments:
-/// * `new_image`: &Vec<csc411_image::Rgb> holds the value of all the rgb pixels from the given file
-/// * `new_image_deci`: Vec<RgbFloat> holds the decimal versions of the rgb pixels from new_image
-/// * `new_width`: value to hold the width value
-/// * `new_height`: value to hold the height value
-pub fn rgbto_ypbpr(new_image: &Vec<csc411_image::Rgb>, new_image_deci: &Vec<RgbFloat>, new_width: u32, new_height: u32) -> Vec<Ypbpr>{
-    let mut pb_vector: Vec<Ypbpr> = vec![Ypbpr{y: 0.0, pb:0.0, pr: 0.0}; new_width as usize * new_height as usize].clone();
-    
-    for pixel in 0..new_image.len(){
-        let y = 0.299 * new_image_deci[pixel].red + 0.587 * new_image_deci[pixel].green + 0.114 * new_image_deci[pixel].blue;
-        let pb = -0.168736 * new_image_deci[pixel].red + (-0.331264) * new_image_deci[pixel].green + 0.5 * new_image_deci[pixel].blue;
-        let pr = 0.5 * new_image_deci[pixel].red + (-0.418688) * new_image_deci[pixel].green + (-0.081312) * new_image_deci[pixel].blue;
-        pb_vector[pixel].y = y;
-        pb_vector[pixel].pb = pb;
-        pb_vector[pixel].pr = pr;
-
-    }
-
-    return pb_vector;
-}
-
 
 /// Calculates all the y values in a block through using DCT.
 /// 

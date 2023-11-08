@@ -18,6 +18,45 @@ pub struct PackedValues{
     pub avg_pr: u64,
 }
 
+/// trims last odd row/col if needed
+/// 
+/// # Arguments:
+/// * `read_in`: the values from the given file
+/// * `new_width`: width to check evenness
+/// * `new_height`: height to check evenness
+pub fn trim_image(read_in: &RgbImage, new_width: u32, new_height: u32) -> Vec<csc411_image::Rgb>{
+    //vector to store values
+    let mut new_image: Vec<Rgb> = vec![Rgb{red: 0, green: 0, blue: 0}; (new_height * new_width) as usize];
+
+    //trimming last row if needed
+    for i in 0..new_height{
+        for j in 0..new_width{
+            new_image[(new_width as usize * i as usize) + j as usize] = read_in.pixels[(read_in.width as usize * i as usize) + j as usize].clone();
+        }
+    }
+    return new_image;
+}
+
+
+/// Turns Rgb into decimals based on denominator
+/// 
+/// # Arguments:
+/// * `new_image`: holds values to be divded
+/// * `read_in`: to be able to use .denominator
+/// * `new_width`: width
+/// * `new_height`: height
+pub fn rgb_int_to_float(new_image: &Vec<csc411_image::Rgb>, read_in: &RgbImage, new_width: u32, new_height: u32) -> Vec<RgbFloat>{
+    let mut new_image_deci: Vec<RgbFloat> = vec![RgbFloat{red: 0.0, green:0.0, blue: 0.0}; new_width as usize * new_height as usize].clone();
+
+    //storing each pixel as a decimal value
+    for pixel in 0..new_image.len(){
+        new_image_deci[pixel].red = new_image[pixel].red as f32/(read_in.denominator as f32);
+        new_image_deci[pixel].green = new_image[pixel].green as f32/read_in.denominator as f32;
+        new_image_deci[pixel].blue = new_image[pixel].blue as f32/read_in.denominator as f32;
+    }
+    return new_image_deci;
+}
+
 /// Unpacks 32 bit word into a,b,c,d,pb, and pr values
 /// 
 /// # Arguments:
@@ -47,42 +86,4 @@ pub fn load_words(_raw_bytes: Vec<[u8; 4]>) -> Vec<PackedValues> {
         unpack_word_list.push(packed);
     }
     return unpack_word_list;
-}
-
-/// trims last odd row/col if needed
-/// 
-/// # Arguments:
-/// * `read_in`: the values from the given file
-/// * `new_width`: width to check evenness
-/// * `new_height`: height to check evenness
-pub fn trim(read_in: &RgbImage, new_width: u32, new_height: u32) -> Vec<csc411_image::Rgb>{
-    //vector to store values
-    let mut new_image: Vec<Rgb> = vec![Rgb{red: 0, green: 0, blue: 0}; (new_height * new_width) as usize];
-
-    //trimming last row if needed
-    for i in 0..new_height{
-        for j in 0..new_width{
-            new_image[(new_width as usize * i as usize) + j as usize] = read_in.pixels[(read_in.width as usize * i as usize) + j as usize].clone();
-        }
-    }
-    return new_image;
-}
-
-/// Turns Rgb into decimals based on denominator
-/// 
-/// # Arguments:
-/// * `new_image`: holds values to be divded
-/// * `read_in`: to be able to use .denominator
-/// * `new_width`: width
-/// * `new_height`: height
-pub fn divide_denom(new_image: &Vec<csc411_image::Rgb>, read_in: &RgbImage, new_width: u32, new_height: u32) -> Vec<RgbFloat>{
-    let mut new_image_deci: Vec<RgbFloat> = vec![RgbFloat{red: 0.0, green:0.0, blue: 0.0}; new_width as usize * new_height as usize].clone();
-
-    //storing each pixel as a decimal value
-    for pixel in 0..new_image.len(){
-        new_image_deci[pixel].red = new_image[pixel].red as f32/(read_in.denominator as f32);
-        new_image_deci[pixel].green = new_image[pixel].green as f32/read_in.denominator as f32;
-        new_image_deci[pixel].blue = new_image[pixel].blue as f32/read_in.denominator as f32;
-    }
-    return new_image_deci;
 }

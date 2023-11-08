@@ -10,7 +10,7 @@ fn main() {
     let filename = args.iter().nth(2).unwrap();
     match args[1].as_str() {
         "-c" => compress(filename),
-        //"-d" => decompress(Some(filename)),
+        "-d" => decompress(Some(filename)),
         _ => {
             eprintln!("Usage: rpeg -d [filename]\nrpeg -c [filename]")
         }
