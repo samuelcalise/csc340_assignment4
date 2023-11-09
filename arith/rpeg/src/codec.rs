@@ -87,14 +87,14 @@ pub fn decompress(filename: Option<&str>) {
     dct_values = dct_function(dct_values, _height, _width, decompressed_words);
     
     //STEP 3 => Reverting DCT values to rgb values
-    let rgb_final = dct_to_rgb(dct_values);
+    let rgb_decompressed_values = dct_to_rgb(dct_values);
 
     //writing final RGB image out
     let completed_image = RgbImage{
         width: _width as u32,
         height: _height as u32,
         denominator: 255,
-        pixels: rgb_final,
+        pixels: rgb_decompressed_values,
     };
 
     //Completed Image
