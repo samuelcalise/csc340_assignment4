@@ -80,17 +80,17 @@ pub fn decompress(filename: Option<&str>) {
     let (_raw_bytes, _width, _height) = read_in_rpeg_data(filename).unwrap();
     
     //STEP 1 => Read compressed data from compressed image
-    let unpack_word_list = load_words(_raw_bytes);
+    let decompressed_words = load_words(_raw_bytes);
 
     //STEP 2 => Codewords and revert to DCT values
-    let mut dct_val_list: Vec<DCTValues> = vec![DCTValues{yval: 0.0, avg_pb: 0.0, avg_pr: 0.0}; _height as usize* _width as usize];
-    dct_val_list = dct_function(dct_val_list, _height, _width, unpack_word_list);
+    let mut dct_values: Vec<DCTValues> = vec![DCTValues{yval: 0.0, avg_pb: 0.0, avg_pr: 0.0}; _height as usize* _width as usize];
+    dct_values = dct_function(dct_values, _height, _width, decompressed_words);
     
     //STEP 3 => Reverting DCT values to rgb values
-    let rgb_final = dct_to_rgb(dct_val_list);
+    let rgb_final = dct_to_rgb(dct_values);
 
     //writing final RGB image out
-    let final_image = RgbImage{
+    let completed_image = RgbImage{
         width: _width as u32,
         height: _height as u32,
         denominator: 255,
@@ -98,5 +98,5 @@ pub fn decompress(filename: Option<&str>) {
     };
 
     //Completed Image
-    final_image.write(None).unwrap();
+    completed_image.write(None).unwrap();
 }
