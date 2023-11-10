@@ -9,7 +9,7 @@ pub struct RgbFloat {
 }
 
 #[derive(Clone, Debug)]
-pub struct PackedValues{
+pub struct QuantValues{
     pub a: u64,
     pub b: i64,
     pub c: i64,
@@ -18,63 +18,51 @@ pub struct PackedValues{
     pub avg_pr: u64,
 }
 
-/// trims last odd row/col if needed
-/// 
-/// # Arguments:
-/// * `read_in`: the values from the given file
-/// * `new_width`: width to check evenness
-/// * `new_height`: height to check evenness
-pub fn trim_image(read_in: &RgbImage, new_width: u32, new_height: u32) -> Vec<csc411_image::Rgb>{
+/// Need to document
+pub fn trim_image(current_image: &RgbImage, current_width: u32, current_height: u32) -> Vec<csc411_image::Rgb>{
     //vector to store values
-    let mut new_image: Vec<Rgb> = vec![Rgb{red: 0, green: 0, blue: 0}; (new_height * new_width) as usize];
+    let mut trimmed_img: Vec<Rgb> = vec![Rgb{red: 0, green: 0, blue: 0}; (current_height * current_width) as usize];
 
     //trimming last row if needed
-    for i in 0..new_height{
-        for j in 0..new_width{
-            new_image[(new_width as usize * i as usize) + j as usize] = read_in.pixels[(read_in.width as usize * i as usize) + j as usize].clone();
+    for i in 0..current_height{
+        for j in 0..current_width{
+            trimmed_img[(current_width as usize * i as usize) + j as usize] = current_image.pixels[(current_image.width as usize * i as usize) + j as usize].clone();
         }
     }
     return new_image;
-}
+} //Used by Compression Function
 
 
-/// Turns Rgb into decimals based on denominator
-/// 
-/// # Arguments:
-/// * `new_image`: holds values to be divded
-/// * `read_in`: to be able to use .denominator
-/// * `new_width`: width
-/// * `new_height`: height
-pub fn rgb_int_to_float(new_image: &Vec<csc411_image::Rgb>, read_in: &RgbImage, new_width: u32, new_height: u32) -> Vec<RgbFloat>{
-    let mut new_image_deci: Vec<RgbFloat> = vec![RgbFloat{red: 0.0, green:0.0, blue: 0.0}; new_width as usize * new_height as usize].clone();
+/// Need to document
+pub fn rgb_int_to_float(current_img: &Vec<csc411_image::Rgb>, init_img: &RgbImage, width: u32, height: u32) -> Vec<RgbFloat>{
+    let mut vec: Vec<RgbFloat> = vec![RgbFloat{red: 0.0, green:0.0, blue: 0.0}; width as usize * height as usize].clone();
 
     //storing each pixel as a decimal value
-    for pixel in 0..new_image.len(){
-        new_image_deci[pixel].red = new_image[pixel].red as f32/(read_in.denominator as f32);
-        new_image_deci[pixel].green = new_image[pixel].green as f32/read_in.denominator as f32;
-        new_image_deci[pixel].blue = new_image[pixel].blue as f32/read_in.denominator as f32;
+    for pixel in 0..current_img.len(){
+        vec[pixel].red = current_img[pixel].red as f32/(init_img.denominator as f32);
+        vec[pixel].green = current_img[pixel].green as f32/init_img.denominator as f32;
+        vec[pixel].blue = current_img[pixel].blue as f32/init_img.denominator as f32;
     }
-    return new_image_deci;
-}
+    return vec;
+} //Used by Compression Function
 
-/// Unpacks 32 bit word into a,b,c,d,pb, and pr values
-/// 
-/// # Arguments:
-/// * `_raw_bytes`: each byte to be unpacked
-pub fn load_words(_raw_bytes: Vec<[u8; 4]>) -> Vec<PackedValues> {
-    let mut unpack_word_list = Vec::new();
-    for byte in _raw_bytes{
-        // upacks chroma and avg pb and avg pr values
-        let unpackedword = u32::from_be_bytes(byte);
-        let a = getu(unpackedword as u64, 9, 23);
-        let b = gets(unpackedword as u64, 5, 18);
-        let c = gets(unpackedword as u64, 5, 13);
-        let d = gets(unpackedword as u64, 5, 8);
 
-        let avg_pb = getu(unpackedword as u64, 4, 4);
-        let avg_pr = getu(unpackedword as u64, 4, 0);
+/// Need to document
+pub fn load_words(compressed_bytes: Vec<[u8; 4]>) -> Vec<QuantValues> {
+    let mut words_vec = Vec::new();
+    for byte in compressed_bytes{
+        
+        let word_of_bytes = u32::from_be_bytes(byte);
 
-        let packed = PackedValues{
+        let a = getu(word_of_bytes as u64, 9, 23);
+        let b = gets(word_of_bytes as u64, 5, 18);
+        let c = gets(word_of_bytes as u64, 5, 13);
+        let d = gets(word_of_bytes as u64, 5, 8);
+
+        let avg_pb = getu(word_of_bytes as u64, 4, 4);
+        let avg_pr = getu(word_of_bytes as u64, 4, 0);
+
+        let values = QuantValues{
             a: a,
             b: b,
             c: c,
@@ -83,7 +71,7 @@ pub fn load_words(_raw_bytes: Vec<[u8; 4]>) -> Vec<PackedValues> {
             avg_pr,
         };
         // saves values above
-        unpack_word_list.push(packed);
+        words_vec.push(values);
     }
-    return unpack_word_list;
-}
+    return words_vec;
+} //Used by Decompression Function

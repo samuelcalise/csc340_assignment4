@@ -13,42 +13,30 @@ pub struct Ypbpr {
     pub pr: f32,
 }
 
-/// Converts rgb into a ypbpr values with given formula. Returns a vector including all the Ypbpr values.
-/// 
-/// # Arguments:
-/// * `new_image`: &Vec<csc411_image::Rgb> holds the value of all the rgb pixels from the given file
-/// * `new_image_deci`: Vec<RgbFloat> holds the decimal versions of the rgb pixels from new_image
-/// * `new_width`: value to hold the width value
-/// * `new_height`: value to hold the height value
-pub fn rgb_to_ypbpr(new_image: &Vec<csc411_image::Rgb>, new_image_deci: &Vec<RgbFloat>, new_width: u32, new_height: u32) -> Vec<Ypbpr>{
-    let mut pb_vector: Vec<Ypbpr> = vec![Ypbpr{y: 0.0, pb:0.0, pr: 0.0}; new_width as usize * new_height as usize].clone();
+///Need to Document
+pub fn rgb_to_ypbpr(current_img: &Vec<csc411_image::Rgb>, rgb_float_img: &Vec<RgbFloat>, width: u32, height: u32) -> Vec<Ypbpr>{
+    let mut vec: Vec<Ypbpr> = vec![Ypbpr{y: 0.0, pb:0.0, pr: 0.0}; new_width as usize * new_height as usize].clone();
     
-    for pixel in 0..new_image.len(){
-        let y = 0.299 * new_image_deci[pixel].red + 0.587 * new_image_deci[pixel].green + 0.114 * new_image_deci[pixel].blue;
-        let pb = -0.168736 * new_image_deci[pixel].red + (-0.331264) * new_image_deci[pixel].green + 0.5 * new_image_deci[pixel].blue;
-        let pr = 0.5 * new_image_deci[pixel].red + (-0.418688) * new_image_deci[pixel].green + (-0.081312) * new_image_deci[pixel].blue;
-        pb_vector[pixel].y = y;
-        pb_vector[pixel].pb = pb;
-        pb_vector[pixel].pr = pr;
+    for pixel in 0..current_img.len(){
+        let y = 0.299 * rgb_float_img[pixel].red + 0.587 * rgb_float_img[pixel].green + 0.114 * rgb_float_img[pixel].blue;
+        let pb = -0.168736 * rgb_float_img[pixel].red + (-0.331264) * rgb_float_img[pixel].green + 0.5 * rgb_float_img[pixel].blue;
+        let pr = 0.5 * rgb_float_img[pixel].red + (-0.418688) * rgb_float_img[pixel].green + (-0.081312) * rgb_float_img[pixel].blue;
+        vec[pixel].y = y;
+        vec[pixel].pb = pb;
+        vec[pixel].pr = pr;
 
     }
 
-    return pb_vector;
+    return vec;
 }
 
-/// Takes the index of chroma for the pb and pr values. Also converts b,c,d to 5 bits.
-/// 
-/// # Arguments:
-/// * `pb_vector`: A signed integer value
-/// * `new_width`: the width
-/// * `_new_height`: the height 
-/// * `row`: the row
-/// * `col`: the col
-pub fn get_dct_values(pb_vector: &Vec<Ypbpr>, new_width: u32, _new_height: u32, row: u32, col: u32) -> (usize, usize, f32, f32, f32, f32) {
-    let top_left = pb_vector[(new_width * row + col) as usize].clone();
-    let top_right = pb_vector[(new_width * row + (col + 1)) as usize].clone();
-    let bot_left = pb_vector[(new_width * (row+1) + col) as usize].clone();
-    let bot_right = pb_vector[(new_width * (row+1) + (col+1)) as usize].clone();
+///Need to document
+pub fn get_dct_values(vec: &Vec<Ypbpr>, width: u32, row: u32, col: u32) -> (usize, usize, f32, f32, f32, f32) {
+    
+    let top_left = vec[(width * row + col) as usize].clone();
+    let top_right = vec[(width * row + (col + 1)) as usize].clone();
+    let bot_left = vec[(width * (row+1) + col) as usize].clone();
+    let bot_right = vec[(width * (row+1) + (col+1)) as usize].clone();
 
     let avg_pb = (top_left.pb + top_right.pb + bot_right.pb + bot_left.pb)/4.0;
     let avg_pr = (top_left.pr + top_right.pr + bot_right.pr + bot_left.pr)/4.0;
@@ -70,51 +58,53 @@ pub fn get_dct_values(pb_vector: &Vec<Ypbpr>, new_width: u32, _new_height: u32, 
     return (avg_pb, avg_pr, a, b, c, d);
 }
 
-/// Calculates all the y values in a block through using DCT.
-/// 
-/// # Arguments:
-/// * `dct_val_list`: list that holds the positions of 
-/// * `_height`: value to hold the height value
-/// * `_width`: value to hold the width value
-/// * `unpack_word_list`: vector that contains the values needed to calculate y1,y2,y3,y4
-pub fn dct_function(mut dct_val_list: Vec<DCTValues>, _height: u32, _width: u32, unpack_word_list: Vec<PackedValues>) -> Vec<DCTValues>{
-    let mut counter = 0;
-    for i in (0.._height).step_by(2){
-        for j in (0.._width).step_by(2){
-            let a_new = (unpack_word_list[counter].borrow().a as f32 / 511.0).clamp(0.0,1.0);
-            let b_new = (unpack_word_list[counter].borrow().b as f32 / 50.0).clamp(-0.3,0.3);
-            let c_new = (unpack_word_list[counter].borrow().c as f32 / 50.0).clamp(-0.3,0.3);
-            let d_new = (unpack_word_list[counter].borrow().d as f32 / 50.0).clamp(-0.3,0.3);
-            let pb = chroma_of_index(unpack_word_list[counter].borrow().avg_pb as usize);
-            let pr = chroma_of_index(unpack_word_list[counter].borrow().avg_pr as usize);
-            let y1 = a_new - b_new - c_new + d_new;
-            let y2 = a_new - b_new + c_new - d_new;
-            let y3 = a_new + b_new - c_new - d_new;
-            let y4 = a_new + b_new + c_new + d_new;
-            dct_val_list[(i * _width + j) as usize] = DCTValues{
+/// Need documentation
+pub fn dct_function(mut dct_vec: Vec<DCTValues>, img_height: u32, img_width: u32, word_vec: Vec<QuantValues>) -> Vec<DCTValues>{
+    let mut index = 0;
+    for i in (0..img_height).step_by(2){
+        for j in (0..img_width).step_by(2){
+
+
+            let a = (word_vec[index].borrow().a as f32 / 511.0).clamp(0.0,1.0);
+            let b = (word_vec[index].borrow().b as f32 / 50.0).clamp(-0.3,0.3);
+            let c = (word_vec[index].borrow().c as f32 / 50.0).clamp(-0.3,0.3);
+            let d = (word_vec[index].borrow().d as f32 / 50.0).clamp(-0.3,0.3);
+
+
+            let pb = chroma_of_index(word_vec[index].borrow().avg_pb as usize);
+            let pr = chroma_of_index(word_vec[index].borrow().avg_pr as usize);
+
+
+            let y1 = a - b - c + d;
+            let y2 = a - b + c - d;
+            let y3 = a + b - c - d;
+            let y4 = a + b + c + d;
+
+            //2x2 Square 
+            dct_vec[(i * img_width + j) as usize] = DCTValues{
                 yval: y1,
                 avg_pb: pb,
                 avg_pr: pr,
             };
-            dct_val_list[(i * _width + (j+1)) as usize] = DCTValues{
+            dct_vec[(i * img_width + (j+1)) as usize] = DCTValues{
                 yval: y2,
                 avg_pb: pb,
                 avg_pr: pr,
             };
-            dct_val_list[((i+1) * _width + j) as usize] = DCTValues{
+            dct_vec[((i+1) * img_width + j) as usize] = DCTValues{
                 yval: y3,
                 avg_pb: pb,
                 avg_pr: pr,
             };
-            dct_val_list[((i+1) * _width + (j+1)) as usize] = DCTValues{
+            dct_vec[((i+1) * img_width + (j+1)) as usize] = DCTValues{
                 yval: y4,
                 avg_pb: pb,
                 avg_pr: pr,
             };
-            counter += 1;
+            index += 1;
         }
     }
-    return dct_val_list;
+    return dct_vec;
 }
 
 
@@ -122,10 +112,10 @@ pub fn dct_function(mut dct_val_list: Vec<DCTValues>, _height: u32, _width: u32,
 /// 
 /// # Arguments:
 /// * `dct_val_list`: used to access the values to be converted to rgb
-pub fn dct_to_rgb(dct_val_list: Vec<DCTValues>) -> Vec<Rgb>{
+pub fn dct_to_rgb(dct_vec: Vec<DCTValues>) -> Vec<Rgb>{
     //dct to rgb float
     let mut rgb_final = Vec::new();
-    for value in dct_val_list{
+    for value in dct_vec{
         let rgb_val = Rgb{
             red: ((1.0 * value.yval + 0.0 * value.avg_pb + 1.402 * value.avg_pr) * 255.0) as u16,
             green: ((1.0 * value.yval - 0.344136 * value.avg_pb - 0.714136 * value.avg_pr) * 255.0) as u16,

@@ -4,7 +4,6 @@ use csc411_rpegio::{output_rpeg_data, read_in_rpeg_data};
 use crate::format::{trim_image, rgb_int_to_float, load_words};
 use crate::value_conversion::{rgb_to_ypbpr, get_dct_values, dct_function, dct_to_rgb};
 
-// created structs to easier manipulate data
 #[derive(Clone, Debug)]
 pub struct Ypbpr {
     pub y: f32,
@@ -26,7 +25,6 @@ pub struct DCTValues{
     pub avg_pr: f32,
 }
 
-// function for compression
 pub fn compress(filename: Option<&str>)
 {
     let init_image = RgbImage::read(filename).unwrap();
@@ -59,7 +57,7 @@ pub fn compress(filename: Option<&str>)
     for row in (0..current_height).step_by(2){
         for col in (0..current_width).step_by(2){
             //discrete cosine transform
-            let (avg_pb,avg_pr,a,b,c,d) = get_dct_values(&this_vector, current_width, current_height, row, col);
+            let (avg_pb,avg_pr,a,b,c,d) = get_dct_values(&this_vector, current_width, row, col);
             let mut word = 0_u64;
             word = newu(word, 9, 23, a as u64).unwrap();
             word = news(word, 5, 18, b as i64).unwrap();
@@ -75,24 +73,23 @@ pub fn compress(filename: Option<&str>)
     output_rpeg_data(&word_vec, current_width, current_width);
 }
 
-// Decompress----------------------------------------------------------------------------------------
 pub fn decompress(filename: Option<&str>) {
-    let (_raw_bytes, _width, _height) = read_in_rpeg_data(filename).unwrap();
+    let (compressed_bytes, width, height) = read_in_rpeg_data(filename).unwrap();
     
     //STEP 1 => Read compressed data from compressed image
-    let decompressed_words = load_words(_raw_bytes);
+    let decompressed_words = load_words(compressed_bytes);
 
     //STEP 2 => Codewords and revert to DCT values
-    let mut dct_values: Vec<DCTValues> = vec![DCTValues{yval: 0.0, avg_pb: 0.0, avg_pr: 0.0}; _height as usize* _width as usize];
-    dct_values = dct_function(dct_values, _height, _width, decompressed_words);
+    let mut dct_values: Vec<DCTValues> = vec![DCTValues{yval: 0.0, avg_pb: 0.0, avg_pr: 0.0}; height as usize* width as usize];
+    dct_values = dct_function(dct_values, height, width, decompressed_words);
     
     //STEP 3 => Reverting DCT values to rgb values
     let rgb_decompressed_values = dct_to_rgb(dct_values);
 
     //writing final RGB image out
     let completed_image = RgbImage{
-        width: _width as u32,
-        height: _height as u32,
+        width: width as u32,
+        height: height as u32,
         denominator: 255,
         pixels: rgb_decompressed_values,
     };
