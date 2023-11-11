@@ -3,13 +3,6 @@ use bitpack::bitpack::{newu, news};
 use csc411_rpegio::{output_rpeg_data, read_in_rpeg_data};
 use crate::format::{trim_image, rgb_int_to_float, get_quant_values};
 use crate::value_conversion::{rgb_to_ypbpr, get_dct_values, dct_function, dct_to_rgb};
-// use crate::value_conversion::dct_function;
-// use crate::value_conversion::dct_to_rgb;
-// use crate::value_conversion::rgb_to_ypbpr;
-// use crate::value_conversion::get_dct_values;
-// use crate::format::trim_image;
-// use crate::format::rgb_int_to_float;
-// use crate::format::get_quant_values;
 
 #[derive(Clone, Debug)]
 pub struct Ypbpr {

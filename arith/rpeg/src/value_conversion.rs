@@ -107,10 +107,7 @@ pub fn dct_function(mut dct_vec: Vec<DCTValues>, img_height: u32, img_width: u32
 }
 
 
-/// Converts DCT values to rgb values as one of the last steps for decompression
-/// 
-/// # Arguments:
-/// * `dct_val_list`: used to access the values to be converted to rgb
+///Need documentation
 pub fn dct_to_rgb(dct_vec: Vec<DCTValues>) -> Vec<Rgb>{
     //dct to rgb float
     let mut rgb_final = Vec::new();
