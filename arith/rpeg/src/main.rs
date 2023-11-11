@@ -1,6 +1,8 @@
 use std::env;
 pub use array2::Array2;
 mod codec;
+pub mod format;
+pub mod value_conversion;
 use codec::{compress, decompress};
 
 fn main() {
