@@ -2,8 +2,7 @@ use csc411_arith::index_of_chroma;
 use csc411_arith::chroma_of_index;
 use crate::format::RgbFloat;
 use crate::codec::DCTValues;
-use crate::format::PackedValues;
-use std::borrow::Borrow;
+use crate::format::QuantValues;
 use csc411_image::Rgb;
 
 #[derive(Clone, Debug)]
@@ -15,7 +14,7 @@ pub struct Ypbpr {
 
 ///Need to Document
 pub fn rgb_to_ypbpr(current_img: &Vec<csc411_image::Rgb>, rgb_float_img: &Vec<RgbFloat>, width: u32, height: u32) -> Vec<Ypbpr>{
-    let mut vec: Vec<Ypbpr> = vec![Ypbpr{y: 0.0, pb:0.0, pr: 0.0}; new_width as usize * new_height as usize].clone();
+    let mut vec: Vec<Ypbpr> = vec![Ypbpr{y: 0.0, pb:0.0, pr: 0.0}; width as usize * height as usize].clone();
     
     for pixel in 0..current_img.len(){
         let y = 0.299 * rgb_float_img[pixel].red + 0.587 * rgb_float_img[pixel].green + 0.114 * rgb_float_img[pixel].blue;
@@ -65,14 +64,14 @@ pub fn dct_function(mut dct_vec: Vec<DCTValues>, img_height: u32, img_width: u32
         for j in (0..img_width).step_by(2){
 
 
-            let a = (word_vec[index].borrow().a as f32 / 511.0).clamp(0.0,1.0);
-            let b = (word_vec[index].borrow().b as f32 / 50.0).clamp(-0.3,0.3);
-            let c = (word_vec[index].borrow().c as f32 / 50.0).clamp(-0.3,0.3);
-            let d = (word_vec[index].borrow().d as f32 / 50.0).clamp(-0.3,0.3);
+            let a = (word_vec[index].a as f32 / 511.0).clamp(0.0,1.0);
+            let b = (word_vec[index].b as f32 / 50.0).clamp(-0.3,0.3);
+            let c = (word_vec[index].c as f32 / 50.0).clamp(-0.3,0.3);
+            let d = (word_vec[index].d as f32 / 50.0).clamp(-0.3,0.3);
 
 
-            let pb = chroma_of_index(word_vec[index].borrow().avg_pb as usize);
-            let pr = chroma_of_index(word_vec[index].borrow().avg_pr as usize);
+            let pb = chroma_of_index(word_vec[index].avg_pb as usize);
+            let pr = chroma_of_index(word_vec[index].avg_pr as usize);
 
 
             let y1 = a - b - c + d;

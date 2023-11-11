@@ -1,8 +1,15 @@
 use csc411_image::{Read, RgbImage, Write};
 use bitpack::bitpack::{newu, news};
 use csc411_rpegio::{output_rpeg_data, read_in_rpeg_data};
-use crate::format::{trim_image, rgb_int_to_float, load_words};
+use crate::format::{trim_image, rgb_int_to_float, get_quant_values};
 use crate::value_conversion::{rgb_to_ypbpr, get_dct_values, dct_function, dct_to_rgb};
+// use crate::value_conversion::dct_function;
+// use crate::value_conversion::dct_to_rgb;
+// use crate::value_conversion::rgb_to_ypbpr;
+// use crate::value_conversion::get_dct_values;
+// use crate::format::trim_image;
+// use crate::format::rgb_int_to_float;
+// use crate::format::get_quant_values;
 
 #[derive(Clone, Debug)]
 pub struct Ypbpr {
@@ -77,7 +84,7 @@ pub fn decompress(filename: Option<&str>) {
     let (compressed_bytes, width, height) = read_in_rpeg_data(filename).unwrap();
     
     //STEP 1 => Read compressed data from compressed image
-    let decompressed_words = load_words(compressed_bytes);
+    let decompressed_words = get_quant_values(compressed_bytes);
 
     //STEP 2 => Codewords and revert to DCT values
     let mut dct_values: Vec<DCTValues> = vec![DCTValues{yval: 0.0, avg_pb: 0.0, avg_pr: 0.0}; height as usize* width as usize];

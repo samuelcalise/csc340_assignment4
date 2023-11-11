@@ -29,7 +29,7 @@ pub fn trim_image(current_image: &RgbImage, current_width: u32, current_height: 
             trimmed_img[(current_width as usize * i as usize) + j as usize] = current_image.pixels[(current_image.width as usize * i as usize) + j as usize].clone();
         }
     }
-    return new_image;
+    return trimmed_img;
 } //Used by Compression Function
 
 
@@ -48,7 +48,7 @@ pub fn rgb_int_to_float(current_img: &Vec<csc411_image::Rgb>, init_img: &RgbImag
 
 
 /// Need to document
-pub fn load_words(compressed_bytes: Vec<[u8; 4]>) -> Vec<QuantValues> {
+pub fn get_quant_values(compressed_bytes: Vec<[u8; 4]>) -> Vec<QuantValues> {
     let mut words_vec = Vec::new();
     for byte in compressed_bytes{
         
