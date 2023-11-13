@@ -1,3 +1,7 @@
+/*
+    Required Imports For Class
+    Provided from assignment documentation
+*/
 use std::env;
 pub use array2::Array2;
 mod codec;

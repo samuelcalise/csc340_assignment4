@@ -1,6 +1,11 @@
 use csc411_image::{RgbImage, Rgb};
 use bitpack::bitpack::{gets, getu};
 
+/*
+    Structures required dervice statement due to using 
+    debug statements and clone functions within the 
+    compression and decompression operations
+*/
 #[derive(Clone, Debug)]
 pub struct RgbFloat {
     pub red: f32,
@@ -18,7 +23,19 @@ pub struct QuantValues{
     pub avg_pr: u64,
 }
 
-/// Need to document
+///Function: `trim_image` -> `Vec<csc411_image::Rgb>`
+///
+///The `trim_image` function recieves paramters:
+///`current_image`: `&RbgImage` -> data type from csc411_image
+///`current_width`: `u32` -> value of the `current_image`'s width
+///`current_height`: `u32` -> value of the `current_image`'s height
+///
+///The purpose of this function is to repurpose the expected image from the command line argument
+///and trim the image's height and width based on the `codec.rs`'s height and width dimensions checker.
+///The function initializes an object of all black `Rgb` pixels of the same dimensions of the passed
+///`current_width` and `current_height`. Then the function will iterate based on the all black `Rgb` object
+///and use `.clone()` of the passed `current_image` to return a vector of `csc411_image::Rgb>` which is a 
+///newer image.
 pub fn trim_image(current_image: &RgbImage, current_width: u32, current_height: u32) -> Vec<csc411_image::Rgb>{
     //vector to store values
     let mut trimmed_img: Vec<Rgb> = vec![Rgb{red: 0, green: 0, blue: 0}; (current_height * current_width) as usize];
@@ -33,7 +50,16 @@ pub fn trim_image(current_image: &RgbImage, current_width: u32, current_height: 
 } //Used by Compression Function
 
 
-/// Need to document
+///Function: `rgb_int_to_float` -> `Vec<RgbFloat>`
+///
+///The `rgb_int_to_float` function recieves paramters:
+///`current_img`: `&Vec<csc411_image::Rgb>` -> data type from csc411_image
+///`init_img`: `&RgbImage` -> reference to the image selected form user command line
+///`width`: `u32` -> value of the `current_image`'s width
+///`height`: `u32` -> value of the `current_image`'s height
+///
+///The purpose of this step is to take the `current_img`'s rgb pixel values into a `f32` values. The function
+///will return a vector of structure `RgbFloat` data attributes.
 pub fn rgb_int_to_float(current_img: &Vec<csc411_image::Rgb>, init_img: &RgbImage, width: u32, height: u32) -> Vec<RgbFloat>{
     let mut vec: Vec<RgbFloat> = vec![RgbFloat{red: 0.0, green:0.0, blue: 0.0}; width as usize * height as usize].clone();
 
@@ -47,7 +73,14 @@ pub fn rgb_int_to_float(current_img: &Vec<csc411_image::Rgb>, init_img: &RgbImag
 } //Used by Compression Function
 
 
-/// Need to document
+///Function: `get_quant_values` -> `Vec<QuantValues>`
+///
+///The `get_quant_values` function recieves paramters:
+///`compressed_bytes`: `&Vec<csc411_image::Rgb>` -> data type from csc411_image
+///
+///The purpose of this function is to take the words of the compressed values and translate the
+///word's values to DCT quanitized values. The function will return a vector of structure `QuantValues`
+///that has the data attributes of the compressed 2x2 section of pixels from the initial image.
 pub fn get_quant_values(compressed_bytes: Vec<[u8; 4]>) -> Vec<QuantValues> {
     let mut words_vec = Vec::new();
     for byte in compressed_bytes{

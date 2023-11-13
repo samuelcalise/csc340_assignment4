@@ -1,4 +1,4 @@
-
+// Used from past locality assignment
 pub struct Array2<T>{
     pub vec_of_val:Vec<T>,
     pub width: usize,

@@ -1,11 +1,17 @@
+/*
+    Required Imports For Class
+*/
 use csc411_image::{Read, RgbImage, Write};
 use bitpack::bitpack::{newu, news};
 use csc411_rpegio::{output_rpeg_data, input_rpeg_data};
 use crate::format::{trim_image, rgb_int_to_float, get_quant_values};
 use crate::value_conversion::{rgb_to_ypbpr, get_dct_values, dct_function, dct_to_rgb};
 
-
-
+/*
+    Structures required dervice statement due to using 
+    debug statements and clone functions within the 
+    compression and decompression operations
+*/
 #[derive(Clone, Debug)]
 pub struct Ypbpr {
     pub y: f32,
@@ -27,14 +33,31 @@ pub struct DCTValues{
     pub avg_pr: f32,
 }
 
+/// Function: Compress
+///
+///The `compress` function takes in object `filename` that has the type
+///`Option<&str>`. The function's operation is to take in an inital img
+///`init_image` that is read in through the csc411_image crate as an 
+///`RbgImage` object.
 pub fn compress(filename: Option<&str>)
 {
+    //Getting initial image
     let init_image = RgbImage::read(filename).unwrap();
 
+    //Identifying the initial images current width and height
+    //in case of need to trim an unfriendly dimensions.
     let mut current_height = init_image.height;
     let mut current_width = init_image.width;
     
-
+    /*
+        Boolean statements to check both dimensions if
+        they are not divisible by 2. If one or both cases
+        are true based on the initial read in image, the
+        if statements will decremenet the current height 
+        and width by one. At any case of this being true,
+        this would relate to information lost due to losing
+        either a singular column or row of the image
+    */
     if init_image.height % 2 != 0
     {
         current_height -=1;
@@ -60,6 +83,7 @@ pub fn compress(filename: Option<&str>)
         for col in (0..current_width).step_by(2){
             //discrete cosine transform
             let (avg_pb,avg_pr,a,b,c,d) = get_dct_values(&this_vector, current_width, row, col);
+            //defining default word of 0 (u64)
             let mut word = 0_u64;
             word = newu(word, 9, 23, a as u64).unwrap();
             word = news(word, 5, 18, b as i64).unwrap();
@@ -75,18 +99,29 @@ pub fn compress(filename: Option<&str>)
     let _ = output_rpeg_data(&word_vec, current_width as usize, current_height as usize);
 }
 
-pub fn decompress(filename: Option<&str>) {
-    let (compressed_bytes, width, height) = input_rpeg_data(filename).unwrap();
+/// Function: Compress
+///
+///The `decompress` function takes in object `filename` that has the type
+///`Option<&str>`. The function's operation is to take the compressed image from
+///the previous `compress` function and translate the compressed image into a new
+///developed ppm image.
+pub fn decompress(filename: Option<&str>) 
+{
+    /*
+        Using the input_rpeg_data function that returns the compressed bytes
+        the compressed ppm images' width and height
+    */
+    let (compressed_bytes, width, height) = input_rpeg_data(filename).unwrap();//Function located in csc411_rpegio crate online
     
     //STEP 1 => Read compressed data from compressed image
-    let decompressed_words = get_quant_values(compressed_bytes);
+    let decompressed_words = get_quant_values(compressed_bytes); //Function located in format.rs
 
     //STEP 2 => Codewords and revert to DCT values
-    let mut dct_values: Vec<DCTValues> = vec![DCTValues{yval: 0.0, avg_pb: 0.0, avg_pr: 0.0}; (width * height) as usize];
-    dct_values = dct_function(dct_values, height as u32, width as u32, decompressed_words);
-    
+    let mut dct_values: Vec<DCTValues> = vec![DCTValues{yval: 0.0, avg_pb: 0.0, avg_pr: 0.0}; (width * height) as usize]; //Similar process recommended from TA Ayman
+    dct_values = dct_function(dct_values, height as u32, width as u32, decompressed_words);//Function located             //from locality office hours          
+                                                                                           //in value_conversion.rs                               
     //STEP 3 => Reverting DCT values to rgb values
-    let rgb_decompressed_values = dct_to_rgb(dct_values);
+    let rgb_decompressed_values = dct_to_rgb(dct_values); //Function located in value_conversion.rs
 
     //writing final RGB image out
     let completed_image = RgbImage{
@@ -97,5 +132,5 @@ pub fn decompress(filename: Option<&str>) {
     };
 
     //Completed Image
-    completed_image.write(None).unwrap();
+    completed_image.write(None).unwrap();//Function located in csc411_image crate online
 }
