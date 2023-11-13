@@ -145,7 +145,7 @@ pub fn dct_function(mut dct_vec: Vec<DCTValues>, img_height: u32, img_width: u32
 }
 
 
-///Function: `dct_function` -> Vec<Rgb>
+///Function: `dct_function` -> `Vec<Rgb>`
 ///
 ///The `dct_function` function recieves paramters:
 ///`dct_vec`: `Vec<DCTValues>` -> data type from csc411_image

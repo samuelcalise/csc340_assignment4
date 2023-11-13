@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["IDAT","IEND","IHDR","PLTE","acTL","bKGD","fcTL","fdAT","pHYs","tIME","tRNS"],"fn":["is_critical","is_private","reserved_set","safe_to_copy"],"type":["ChunkType"]};
