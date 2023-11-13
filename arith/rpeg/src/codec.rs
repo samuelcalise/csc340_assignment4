@@ -1,6 +1,6 @@
 use csc411_image::{Read, RgbImage, Write};
 use bitpack::bitpack::{newu, news};
-use csc411_rpegio::{output_rpeg_data, read_in_rpeg_data};
+use csc411_rpegio::{output_rpeg_data, input_rpeg_data};
 use crate::format::{trim_image, rgb_int_to_float, get_quant_values};
 use crate::value_conversion::{rgb_to_ypbpr, get_dct_values, dct_function, dct_to_rgb};
 
@@ -72,18 +72,18 @@ pub fn compress(filename: Option<&str>)
     }
 
     //Completed compression
-    output_rpeg_data(&word_vec, current_width, current_width);
+    let _ = output_rpeg_data(&word_vec, current_width as usize, current_height as usize);
 }
 
 pub fn decompress(filename: Option<&str>) {
-    let (compressed_bytes, width, height) = read_in_rpeg_data(filename).unwrap();
+    let (compressed_bytes, width, height) = input_rpeg_data(filename).unwrap();
     
     //STEP 1 => Read compressed data from compressed image
     let decompressed_words = get_quant_values(compressed_bytes);
 
     //STEP 2 => Codewords and revert to DCT values
-    let mut dct_values: Vec<DCTValues> = vec![DCTValues{yval: 0.0, avg_pb: 0.0, avg_pr: 0.0}; height as usize* width as usize];
-    dct_values = dct_function(dct_values, height, width, decompressed_words);
+    let mut dct_values: Vec<DCTValues> = vec![DCTValues{yval: 0.0, avg_pb: 0.0, avg_pr: 0.0}; (width * height) as usize];
+    dct_values = dct_function(dct_values, height as u32, width as u32, decompressed_words);
     
     //STEP 3 => Reverting DCT values to rgb values
     let rgb_decompressed_values = dct_to_rgb(dct_values);
